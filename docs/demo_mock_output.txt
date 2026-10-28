@@ -1,0 +1,42 @@
+﻿[ingest] simulator: 2884 readings
+[banner] SAMPLE/SYNTHETIC DATA - not from a real kiln | LLM=fake/mock-llm @ mock://
+[monitor] R-EWMA-o2_pct    o2_pct        peak=9.341    thr=0.853 samples=37
+[monitor] R-EWMA-temp_c    temp_c        peak=452.2    thr=14.775 samples=38
+[monitor] R-O2-HIGH        o2_pct        peak=9.341    thr=5.0 samples=33
+[monitor] R-TEMP-LOW       temp_c        peak=452.2    thr=500 samples=30
+[diagnosis] R-O2-HIGH: cause=air_leak :: [MOCK] Pattern consistent with air_leak based on the supplied windows.
+[report] C:\Users\ardhy\AppData\Local\Temp\kdemo\batch_SYN-0001.md  (dMRV-style DRAFT - NOT CERTIFIED)
+[report] C:\Users\ardhy\AppData\Local\Temp\kdemo\batch_SYN-0001.pdf
+{
+  "synthetic": true,
+  "batch_id": "SYN-0001",
+  "anomaly_events": 4,
+  "diagnosed": 1,
+  "report": "C:\\Users\\ardhy\\AppData\\Local\\Temp\\kdemo\\batch_SYN-0001.md",
+  "report_pdf": "C:\\Users\\ardhy\\AppData\\Local\\Temp\\kdemo\\batch_SYN-0001.pdf",
+  "model": "fake/mock-llm",
+  "timings_ms": {
+    "ingest_ms": 22.7,
+    "monitor_ms": 118.4,
+    "diagnosis_ms": 98.3,
+    "reporting_ms": 34.5
+  },
+  "llm_calls": [
+    {
+      "agent": "diagnosis",
+      "ms": 0.0,
+      "status": 200,
+      "model": "fake/mock-llm",
+      "prompt_tokens": 345,
+      "completion_tokens": 54
+    },
+    {
+      "agent": "reporting",
+      "ms": 0.0,
+      "status": 200,
+      "model": "fake/mock-llm",
+      "prompt_tokens": 209,
+      "completion_tokens": 31
+    }
+  ]
+}

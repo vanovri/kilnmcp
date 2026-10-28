@@ -1,0 +1,15 @@
+# KilnMCP thresholds - SYNTHETIC demo values, not engineering guidance.
+synthetic: true
+warmup_minutes: 20          # rules are skipped during heat-up
+cooldown_minutes: 15        # and during the final cool-down
+rules:
+  R-TEMP-LOW:   {sensor: temp_c,       op: "<", value: 500, severity: high}
+  R-TEMP-HIGH:  {sensor: temp_c,       op: ">", value: 750, severity: high}
+  R-O2-HIGH:    {sensor: o2_pct,       op: ">", value: 5.0, severity: high}
+  R-MOIST-HIGH: {sensor: moisture_pct, op: ">", value: 20.0, severity: medium}
+ewma:
+  alpha: 0.1
+  k_sigma: 4.0               # flag |x - ewma| > k * rolling std
+  min_samples: 30
+  min_run: 3                 # persistence: >=3 consecutive samples (30 s)
+  sensors: [temp_c, o2_pct]
