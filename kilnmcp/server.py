@@ -4,7 +4,15 @@ import argparse, json, os
 from pathlib import Path
 import yaml
 from mcp.server.fastmcp import FastMCP
-from . import db, SENSORS, SYNTHETIC_BANNER
+from . import db, SENSORS, SYNTHETIC_BANNER, REPORT_BANNER
+from .simulator import (
+    LAMPUNG_BATCH_ID,
+    LAMPUNG_FEEDSTOCK_BLEND,
+    LAMPUNG_PARAMS,
+    LAMPUNG_PROFILE_ID,
+    compute_lampung_carbon,
+    reconcile_lampung_bags,
+)
 
 THRESH_PATH = os.environ.get("KILNMCP_THRESHOLDS", str(Path(__file__).resolve().parent.parent / "config" / "thresholds.yaml"))
 
@@ -14,7 +22,7 @@ def _con():
     return db.connect()
 
 def _wrap(d: dict) -> dict:
-    return {"synthetic": True, "banner": SYNTHETIC_BANNER, **d}
+    return {"synthetic": True, "certification_status": REPORT_BANNER, "banner": SYNTHETIC_BANNER, **d}
 
 def _latest_batch(con) -> str | None:
     r = con.execute("SELECT id FROM batches ORDER BY start_ts DESC, rowid DESC LIMIT 1").fetchone()
@@ -62,6 +70,16 @@ def _batch(con, batch_id: str) -> dict:
     d["sensor_summary"] = {a["sensor"]: {"n": a["n"], "min": a["mn"], "max": a["mx"], "mean": round(a["av"], 3)} for a in agg}
     d["sources"] = [r[0] for r in con.execute("SELECT DISTINCT source FROM readings WHERE batch_id=?", (batch_id,))]
     d["duration_min"] = round((d["end_ts"] - d["start_ts"]) / 60, 2)
+    d["certification_status"] = REPORT_BANNER
+    if d["feedstock"] == LAMPUNG_PROFILE_ID:
+        d["lampung_dmrv"] = {
+            "synthetic": True,
+            "certification_status": REPORT_BANNER,
+            "target_temp_zone_c": [450.0, 650.0],
+            "feedstock_blend": LAMPUNG_FEEDSTOCK_BLEND,
+            "carbon_accounting": compute_lampung_carbon(d["output_mass_kg"]),
+            "bag_reconciliation": reconcile_lampung_bags(batch_id, d["output_mass_kg"], d["input_mass_kg"]),
+        }
     return d
 
 @mcp.tool()
@@ -118,6 +136,33 @@ def log_event(batch_id: str, kind: str, note: str) -> dict:
     cur = con.execute("INSERT INTO events(batch_id,ts,kind,note) VALUES(?,?,?,?)", (batch_id, db.now(), kind, note))
     con.commit()
     return _wrap({"event_id": cur.lastrowid})
+
+@mcp.tool()
+def get_lampung_dmrv(batch_id: str = LAMPUNG_BATCH_ID, bag_mode: str = "mixed") -> dict:
+    """Stoichiometric carbon accounting + QR bag reconciliation for a Lampung dual-feedstock batch (DRAFT)."""
+    con = _con()
+    b = con.execute("SELECT * FROM batches WHERE id=?", (batch_id,)).fetchone()
+    if b:
+        in_kg = float(b["input_mass_kg"])
+        out_kg = float(b["output_mass_kg"])
+        feedstock = str(b["feedstock"])
+    else:
+        in_kg = 800.0
+        out_kg = 200.0
+        feedstock = LAMPUNG_PROFILE_ID
+    return _wrap({
+        "batch_id": batch_id,
+        "feedstock": feedstock,
+        "feedstock_blend": LAMPUNG_FEEDSTOCK_BLEND,
+        "target_temp_zone_c": [450.0, 650.0],
+        "carbon_accounting": compute_lampung_carbon(out_kg),
+        "bag_reconciliation": reconcile_lampung_bags(batch_id, out_kg, in_kg, bag_mode=bag_mode),
+    })
+
+@mcp.resource("kiln://profiles/lampung_coffee_corncob")
+def lampung_profile_resource() -> str:
+    """PT ENVIID Karbon Solusi Lampung Dual-Feedstock Slow Pyrolysis Profile (SYNTHETIC)."""
+    return json.dumps(_wrap(LAMPUNG_PARAMS), indent=2)
 
 @mcp.resource("kiln://batches/{batch_id}")
 def batch_resource(batch_id: str) -> str:

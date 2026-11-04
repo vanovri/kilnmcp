@@ -58,7 +58,11 @@ class FakeLLM(LLM):
     def chat(self, messages, agent, max_tokens=600):
         text = messages[-1]["content"]
         if agent == "diagnosis":
-            cause = "air_leak" if "R-O2-HIGH" in text else ("wet_feedstock" if "R-MOIST-HIGH" in text else "other")
+            cause = (
+                "air_leak" if "R-O2-HIGH" in text else
+                ("wet_feedstock" if "R-MOIST-HIGH" in text else
+                 ("sensor_fault" if "STUCK" in text else "other"))
+            )
             out = json.dumps({"explanation": f"[MOCK] Pattern consistent with {cause} based on the supplied windows.",
                               "suggested_action": "[MOCK] Inspect seals/door gaskets and feedstock moisture before next batch.",
                               "probable_cause": cause})

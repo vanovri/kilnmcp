@@ -52,15 +52,17 @@ kilnmcp/uart.py       UART byte-stream frames ($KILN,...*XOR), file/serial repla
 kilnmcp/server.py     FastMCP server: stdio or Streamable HTTP (127.0.0.1)
 kilnmcp/agents.py     monitor / diagnosis / reporting agents (MCP ClientSession)
 kilnmcp/llm.py        OpenAI-compatible client (TokenMeter -> 9Router) + FakeLLM
-kilnmcp/demo.py       end-to-end CLI demo
+kilnmcp/demo.py       end-to-end CLI demo (supports --profile lampung_coffee_corncob)
 kilnmcp/pdf.py        Markdown report -> PDF (markdown + xhtml2pdf, pure Python)
+kilnmcp/workbench.py  PT ENVIID Karbon Solusi × KilnMCP Lampung Pyrolysis & Batch dMRV Workbench generator
+web/index.html        interactive dual-canvas telemetry, UART inspector & QR bag reconciliation workbench
 scripts/record_demo.ps1 / replay_demo.ps1  text "terminal recording" of the mock demo
 config/thresholds.yaml  editable thresholds (also served as kiln://thresholds)
 ```
 
 ## MCP surface
-- **Tools:** `get_latest`, `get_window`, `get_batch`, `list_batches`, `list_anomalies`, `log_event`, `record_anomaly`, `save_diagnosis`, `save_report`
-- **Resources:** `kiln://batches/{id}`, `kiln://thresholds`, `kiln://schema`
+- **Tools:** `get_latest`, `get_window`, `get_batch`, `list_batches`, `list_anomalies`, `log_event`, `record_anomaly`, `save_diagnosis`, `save_report`, `get_lampung_dmrv`
+- **Resources:** `kiln://batches/{id}`, `kiln://thresholds`, `kiln://schema`, `kiln://profiles/lampung_coffee_corncob`
 - **Prompt:** `diagnose_anomaly`
 
 ## Setup (Windows PowerShell)
@@ -88,6 +90,9 @@ python -m venv .venv
 # UART tooling
 .\.venv\Scripts\python -m kilnmcp.uart write data\b.frames --fault air_leak@60+6
 .\.venv\Scripts\python -m kilnmcp.uart replay --file data\b.frames   # or --port COM5 / /dev/pts/N (socat)
+# PT ENVIID Karbon Solusi Lampung Profile & Interactive Workbench
+.\.venv\Scripts\python -m kilnmcp.demo --profile lampung_coffee_corncob --mock-llm
+.\.venv\Scripts\python -m kilnmcp.workbench --out web\index.html
 ```
 
 ## Sample output (excerpt, `--mock-llm`, synthetic)
